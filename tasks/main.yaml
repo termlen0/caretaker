@@ -1,9 +1,6 @@
 ---
 - name: GATHER INPUT FROM SOURCE OF TRUTH
   include_tasks: "{{ sot }}.yaml"
-  vars:
-    repo_name: ""
-    #archive_dir: ""
   when: archive_dir is defined
   delegate_to: localhost
   run_once: yes
@@ -27,3 +24,35 @@
   template:
     src: render_running.j2
     dest: "{{ role_path }}/files/running_configs/{{ inventory_hostname }}.cfg"
+
+
+- name: CHECK IF OOB CHANGES EXIST
+  command: >-
+    diff "{{ role_path }}"/files/running_configs "{{ role_path }}"/files/repo_dir/"{{ archive_dir }}"
+  register: difference
+  failed_when: difference.rc > 1
+  changed_when: difference.rc == 1
+  delegate_to: localhost
+  run_once: true
+
+- name: DISPLAY DIFFERENCES
+  debug:
+    var: difference.stdout
+  when: difference.rc != 0
+  delegate_to: localhost
+  run_once: true
+
+- name: GENERATE DIFF REPORT
+  template:
+    src: diff_report.j2
+    dest: "{{ role_path }}/files/diff_report.txt"
+  when: difference.rc != 0
+  delegate_to: localhost
+  run_once: true
+
+- name: STOP PLAY EXECUTION
+  assert:
+    that: difference.rc == 0
+    msg: "Caretaker has identified an OOB change on your network. Manual sync required... Aborting deployment."
+  delegate_to: localhost
+  run_once: true

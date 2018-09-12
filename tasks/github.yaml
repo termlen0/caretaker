@@ -8,5 +8,6 @@
 
 - name: GATHER THE ARCHIVED CONFIGS
   git:
-    clone: "{{ repo_name }}"
+    repo: "{{ repo_name }}"
+    clone: yes
     dest: "{{ role_path }}/files/repo_dir"
