@@ -1,0 +1,12 @@
+---
+- name: ENSURE THAT A LOCAL ARCHIVE PATH EXISTS
+  file:
+    path: "{{ role_path }}/files/repo_dir"
+    state: directory
+    mode: 0777
+
+
+- name: GATHER THE ARCHIVED CONFIGS
+  git:
+    clone: "{{ repo_name }}"
+    dest: "{{ role_path }}/files/repo_dir"

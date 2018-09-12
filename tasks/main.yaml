@@ -1,0 +1,29 @@
+---
+- name: GATHER INPUT FROM SOURCE OF TRUTH
+  include_tasks: "{{ sot }}.yaml"
+  vars:
+    repo_name: ""
+    #archive_dir: ""
+  when: archive_dir is defined
+  delegate_to: localhost
+  run_once: yes
+
+
+- name: ENSURE THAT THE DIR TO STORE RUNNING CONFIGS EXITS
+  file:
+    path: "{{ role_path }}/files/running_configs"
+    state: directory
+    mode: 0777
+  delegate_to: localhost
+  run_once: yes
+
+
+- name: GET THE RUNNING CONFIG OF THE DEVICES
+  cli:
+    command: "show running"
+  register: running_config
+
+- name: SAVE THE RUNNING CONFIG LOCALLY
+  template:
+    src: render_running.j2
+    dest: "{{ role_path }}/files/running_configs/{{ inventory_hostname }}.cfg"
