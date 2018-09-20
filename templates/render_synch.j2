@@ -1,0 +1,31 @@
+---
+
+- name: RECONCILIATION PLAYBOOK
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  tasks:
+
+    -name: BLOCK
+     block:
+       - name: ENSURE THE USER PROVIDES RECONCILE DIRECTION
+         debug:
+           msg: "Playbook invocation is incorrect"
+
+
+       - name: DISPLAY USAGE
+         debug:
+           msg: "usage: ansible-playbook -i inventory reconcile.yaml -t "[sync_to_devices|sync_to_sot]"
+
+       - meta: end_play
+
+- name: SYNC TO DEVICES
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  tags: sync_to_devices
+
+  tasks:
+    - debug: 
+
+  

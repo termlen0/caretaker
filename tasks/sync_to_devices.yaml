@@ -1,0 +1,30 @@
+---
+- name: ROUTER CONFIGURATIONS
+  hosts: all
+  connection: network_cli
+  gather_facts: no
+
+  tasks:
+
+    - include_vars:
+        file: reconcile_vars.yaml
+
+    - name: REMOVE NON CONFIG LINES
+      lineinfile:
+        path: "{{ repo_dir }}/{{inventory_hostname}}.cfg"
+        line: "Building configuration..."
+        state: absent
+
+    - name: REMOVE NON CONFIG LINES - REGEXP
+      lineinfile:
+        path: "{{ repo_dir }}/{{inventory_hostname}}.cfg"
+        regexp: 'Current configuration.*'
+        state: absent
+
+    - name: COPY RUNNING CONFIG TO ROUTER
+      command: scp -i files/ssh_private_key.pem {{ repo_dir }}/{{inventory_hostname}}.cfg ec2-user@{{ ansible_host }}:/{{inventory_hostname}}.config
+
+    - name: CONFIG REPLACE
+      ios_command:
+        commands:
+          - config replace flash:{{inventory_hostname}}.config force

@@ -1,0 +1,5 @@
+ansible_network_provider: ansible-network.cisco_ios
+config_store_working_dir: "{{ role_path }}/running"
+config_store_repo_dir: "{{ role_path }}/repo_dir"
+config_store_remote_name: origin
+ssh_private_key_file: "{{ playbook_dir }}/files/ssh_private_key.pem"

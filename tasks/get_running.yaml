@@ -1,0 +1,73 @@
+---
+
+- name: "invoke network provider get function"
+  include_role:
+    name: "{{ ansible_network_provider }}"
+    tasks_from: config_manager/get
+
+
+- name: "validate configuration exists"
+  fail:
+    msg: "missing required hostvar: configuration"
+  when: configuration is not defined
+
+
+- name: "Ensure folder structure"
+  file:
+    path: "{{ config_store_working_dir }}/{{ inventory_hostname_short }}/config"
+    state: directory
+
+- name: "copy content into local directory"
+  copy:
+    content: "{{ configuration }}"
+    dest: "{{ config_store_working_dir }}/{{ inventory_hostname_short }}/config/running.cfg"
+
+- name: "Clone existing git repository"
+  git:
+    repo: "{{ config_store_scm_url }}"
+    dest: "{{ config_store_repo_dir }}"
+    remote: "{{ config_store_remote_name }}"
+    key_file: "{{ config_store_scm_private_key_file }}"
+    force: yes
+  run_once: yes
+  changed_when: False
+
+- name: CLEANUP THE FILES BEFORE DOING A DIFF
+  lineinfile:
+    path: "{{ item }}"
+    regexp: "Last configuration change at .*"
+    state: absent
+  with_items:
+    - "{{ config_store_working_dir }}/{{ inventory_hostname_short }}/config/running.cfg"
+    - "{{ config_store_repo_dir }}/{{ inventory_hostname_short }}/config/running.cfg"
+
+- name: CHECK IF OOB CHANGES EXIST
+  command: >-
+    diff "{{ config_store_working_dir }}/{{ inventory_hostname_short }}/config/running.cfg" \
+    "{{ config_store_repo_dir }}/{{ inventory_hostname_short }}/config/running.cfg"
+  register: difference
+  failed_when: difference.rc > 1
+  changed_when: difference.rc == 1
+
+- name: TASKS IF DIFFERENCES ARE FOUND
+  block:
+    - name: DISPLAY DIFFERENCES
+      debug:
+        var: difference.stdout
+
+    - name: GENERATE THE RECONCILIATION PLAYBOOK
+      template:
+        src: render_reconcile.j2
+        dest: "{{ playbook_dir }}/reconcile.yaml"
+
+    - name: OOB CHANGES DETECTED
+      assert:
+        that: difference.rc == 0
+        msg: "Caretaker has identified an OOB change on your network. Manual sync required... Aborting deployment."
+
+  when: difference.rc != 0
+
+
+
+- meta: end_play
+  when: difference.rc != 0

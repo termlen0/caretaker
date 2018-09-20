@@ -1,0 +1,22 @@
+- name: GENERATE DIFF REPORT
+  template:
+    src: diff_report.j2
+    dest: "{{ role_path }}/files/diff_report.txt"
+
+- name: GENERATE VARS FOR RECONCILIATION PLAYBOOKS
+  template:
+    src: render_vars.j2
+    dest: "{{ role_path }}/tasks/reconcile_vars.yaml"
+
+- name: GENERATE THE RECONCILIATION PLAYBOOK
+  template:
+    src: render_synch.j2
+    dest: "{{ playbook_dir }}/reconcile.yaml"
+
+- name: OOB CHANGES DETECTED
+  assert:
+    that: difference.rc == 0
+    msg: "Caretaker has identified an OOB change on your network. Manual sync required... Aborting deployment."
+
+- name: END PLAY
+  meta: end_play

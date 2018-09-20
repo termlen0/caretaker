@@ -1,0 +1,81 @@
+---
+
+- name: RECONCILIATION PLAYBOOK
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  tasks:
+
+    - name: Prevent run without tags
+      fail: msg="You must run this playbook with tags! [sync_to_devices|sync_to_sot]"
+
+- name: SYNC TO DEVICES
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  tags: sync_to_devices
+  vars:
+#    scm_url: "git@github.com:termlen0/rhte_2018_archive.git"
+    ssh_private_key: "{{ ssh_private_key_file }}"
+    repo_dir: "{{ config_store_repo_dir }}"
+#  config_store_secure_dir: "~/.ansible/secure"
+#  config_store_working_dir: "~/.ansible/tmp/config_store"
+#  config_store_remote_name: "origin"
+#  config_store_remote_branch: "master"
+#  config_store_keep_local_repo: False
+#  config_store_committer_name: "ansible"
+#  config_store_committer_email: "ansible@localhost"
+#  ansible_network_provider: "ansible-network.cisco_ios"
+
+  tasks:
+{% raw %}
+
+    - name: REMOVE NON CONFIG LINES
+      lineinfile:
+        path: "{{ repo_dir }}/{{inventory_hostname_short}}/config/running.cfg"
+        line: "Building configuration..."
+        state: absent
+
+    - name: REMOVE NON CONFIG LINES - REGEXP
+      lineinfile:
+        path: "{{ repo_dir }}/{{inventory_hostname_short}}/config/running.cfg"
+        regexp: 'Current configuration.*'
+        state: absent
+
+    - name: COPY RUNNING CONFIG TO ROUTER
+      command: >-
+        scp -i {{ ssh_private_key }} {{ repo_dir }}/{{inventory_hostname_short}}/config/running.cfg  
+        ec2-user@{{ ansible_host }}:/{{inventory_hostname}}.config
+
+    - name: CONFIG REPLACE
+      ios_command:
+        commands:
+          - config replace flash:{{inventory_hostname}}.config force
+
+    - name: CLEANUP
+      file:
+        path: "{{ repo_dir }}"
+        state: absent 
+
+{% endraw %}
+  
+- name: SYNC TO SOT
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  tags: sync_to_sot
+  vars:
+    scm_url: "{{ config_store_scm_url }}"
+    scm_private_key: "{{ config_store_scm_private_key_file }}"
+
+{% raw %}
+  tasks:
+    - name: ansible-network.content_store
+      include_role:
+        name: ansible-network.content_store
+        tasks_from: config
+      vars:
+        config_store_scm_url: "{{ scm_url }}"
+        config_store_scm_private_key_file: "{{ scm_private_key }}"
+
+{% endraw %}

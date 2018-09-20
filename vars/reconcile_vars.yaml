@@ -1,0 +1,5 @@
+---
+sot: github
+repo_name: https://github.com/termlen0/rhte_2018
+archive_dir: config_archives
+repo_dir: /working/RHTE_2018/rhte_demo/roles/caretaker/files/repo_dir/config_archives
