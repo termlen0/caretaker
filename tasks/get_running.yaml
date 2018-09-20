@@ -66,8 +66,3 @@
         msg: "Caretaker has identified an OOB change on your network. Manual sync required... Aborting deployment."
 
   when: difference.rc != 0
-
-
-
-- meta: end_play
-  when: difference.rc != 0
