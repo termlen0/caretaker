@@ -22,6 +22,11 @@
     content: "{{ configuration }}"
     dest: "{{ config_store_working_dir }}/{{ inventory_hostname_short }}/config/running.cfg"
 
+
+- name: "ssh-add file containing the key"
+  shell: "eval `ssh-agent -s` ; ssh-add {{ config_store_scm_private_key_file }}"
+
+
 - name: "Clone existing git repository"
   git:
     repo: "{{ config_store_scm_url }}"
@@ -32,10 +37,19 @@
   run_once: yes
   changed_when: False
 
-- name: CLEANUP THE FILES BEFORE DOING A DIFF
+- name: CLEANUP -1 THE FILES BEFORE DOING A DIFF
   lineinfile:
     path: "{{ item }}"
     regexp: "Last configuration change at .*"
+    state: absent
+  with_items:
+    - "{{ config_store_working_dir }}/{{ inventory_hostname_short }}/config/running.cfg"
+    - "{{ config_store_repo_dir }}/{{ inventory_hostname_short }}/config/running.cfg"
+
+- name: CLEANUP -2 THE FILES BEFORE DOING A DIFF
+  lineinfile:
+    path: "{{ item }}"
+    regexp: "Current configuration .*"
     state: absent
   with_items:
     - "{{ config_store_working_dir }}/{{ inventory_hostname_short }}/config/running.cfg"

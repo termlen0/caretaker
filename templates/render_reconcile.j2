@@ -15,17 +15,8 @@
   connection: network_cli
   tags: sync_to_devices
   vars:
-#    scm_url: "git@github.com:termlen0/rhte_2018_archive.git"
     ssh_private_key: "{{ ssh_private_key_file }}"
     repo_dir: "{{ config_store_repo_dir }}"
-#  config_store_secure_dir: "~/.ansible/secure"
-#  config_store_working_dir: "~/.ansible/tmp/config_store"
-#  config_store_remote_name: "origin"
-#  config_store_remote_branch: "master"
-#  config_store_keep_local_repo: False
-#  config_store_committer_name: "ansible"
-#  config_store_committer_email: "ansible@localhost"
-#  ansible_network_provider: "ansible-network.cisco_ios"
 
   tasks:
 {% raw %}
