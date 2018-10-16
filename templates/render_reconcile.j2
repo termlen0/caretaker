@@ -47,6 +47,8 @@
       file:
         path: "{{ repo_dir }}"
         state: absent 
+      run_once: yes
+      delegate_to: localhost
 
 {% endraw %}
   
