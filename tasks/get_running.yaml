@@ -22,9 +22,27 @@
     content: "{{ configuration }}"
     dest: "{{ config_store_working_dir }}/{{ inventory_hostname_short }}/config/running.cfg"
 
+- block:
+
+    - name: "create file with key"
+      copy:
+        content: "{{ config_store_scm_private_key }}"
+        dest: "{{ role_path }}/.scm_private_key"
+        mode: 0400
+
+    - name: "ssh-add file containing the key"
+      shell: "eval `ssh-agent -s` ; ssh-add {{ role_path }}/.scm_private_key"
+
+    - name: SET THE KEY FILE VAR
+      set_fact:
+        config_store_scm_private_key_file: "{{ role_path }}/.scm_private_key"
+
+  when: config_store_scm_private_key is defined
+
 
 - name: "ssh-add file containing the key"
   shell: "eval `ssh-agent -s` ; ssh-add {{ config_store_scm_private_key_file }}"
+
 
 
 - name: "Clone existing git repository"
@@ -36,6 +54,11 @@
     force: yes
   run_once: yes
   changed_when: False
+
+- name: "DELETE THE TEMP SSH PRIVATE KEY"
+  file:
+    path: "{{ config_store_scm_private_key_file }}"
+  when: config_store_scm_private_key is defined
 
 - name: CLEANUP -1 THE FILES BEFORE DOING A DIFF
   lineinfile:
